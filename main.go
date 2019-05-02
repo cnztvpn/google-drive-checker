@@ -50,7 +50,10 @@ func main() {
 	}
 
 	fs := &[]*drive.File{}
-	files.GetFileList(srv, fs, c.parentId)
+	err = files.GetFileList(srv, fs, c.parentId)
+	if err != nil {
+		log.Fatalf("Unable to get all file List: %v", err)
+	}
 
 	for _, f := range *fs {
 		err := checker.ZerobyteFile(f)

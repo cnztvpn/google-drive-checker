@@ -3,7 +3,8 @@ package files
 import (
 	"fmt"
 	"log"
-	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	"google.golang.org/api/drive/v3"
 )
@@ -50,16 +51,14 @@ func GetDirList(srv *drive.Service, dirs *[]*drive.File, parent, npt string) (ne
 	return ""
 }
 
-func GetFileList(srv *drive.Service, files *[]*drive.File, parent string) {
+func GetFileList(srv *drive.Service, files *[]*drive.File, parent string) error {
 	dirs := GetAllDirList(srv, parent)
 	limit := make(chan struct{}, 3)
 
-	var wg sync.WaitGroup
+	eg := errgroup.Group{}
 	for _, dir := range dirs {
-		wg.Add(1)
-		go func(dir *drive.File) {
+		eg.Go(func() error {
 			limit <- struct{}{}
-			defer wg.Done()
 
 			dirQuery := fmt.Sprintf("(parents = '%s') and (trashed = false)", dir.Id)
 			// 一つのアニメディレクトリは100個以下のはず
@@ -67,7 +66,7 @@ func GetFileList(srv *drive.Service, files *[]*drive.File, parent string) {
 
 			r, err := c.Do()
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			for _, f := range r.Files {
@@ -76,8 +75,14 @@ func GetFileList(srv *drive.Service, files *[]*drive.File, parent string) {
 			}
 
 			<-limit
-		}(dir)
+
+			return nil
+		})
 	}
 
-	wg.Wait()
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	return nil
 }

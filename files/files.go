@@ -2,58 +2,14 @@ package files
 
 import (
 	"fmt"
-	"log"
 
 	"golang.org/x/sync/errgroup"
 
 	"google.golang.org/api/drive/v3"
 )
 
-func GetAllDirList(srv *drive.Service, parent string) (dirs []*drive.File) {
-	// get all directory in parent dir
-	dirQuery := fmt.Sprintf("(parents = '%s') and (trashed = false)", parent)
-
-	r, err := srv.Files.List().Q(dirQuery).Fields("nextPageToken, files(id, name, mimeType)").Do()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, f := range r.Files {
-		dirs = append(dirs, f)
-	}
-
-	if r.NextPageToken != "" {
-		n := GetDirList(srv, &dirs, parent, r.NextPageToken)
-
-		for n != "" {
-			n = GetDirList(srv, &dirs, parent, n)
-		}
-	}
-
-	return dirs
-}
-
-func GetDirList(srv *drive.Service, dirs *[]*drive.File, parent, npt string) (nextPageToken string) {
-	dirQuery := fmt.Sprintf("(parents = '%s') and (trashed = false)", parent)
-
-	r, err := srv.Files.List().Q(dirQuery).Fields("nextPageToken, files(id, name, mimeType)").PageToken(npt).Do()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, folder := range r.Files {
-		*dirs = append(*dirs, folder)
-	}
-
-	if r.NextPageToken != "" {
-		return r.NextPageToken
-	}
-
-	return ""
-}
-
-func GetFileList(srv *drive.Service, files *[]*drive.File, parent string) error {
-	dirs := GetAllDirList(srv, parent)
-	limit := make(chan struct{}, 3)
+func getFileList(srv *drive.Service, resultFiles *[]*drive.File, dirs []*drive.File) error {
+	limit := make(chan struct{}, 3) // limit of parallel Google Drive API call
 
 	eg := errgroup.Group{}
 	for _, dir := range dirs {
@@ -61,7 +17,7 @@ func GetFileList(srv *drive.Service, files *[]*drive.File, parent string) error 
 			limit <- struct{}{}
 
 			dirQuery := fmt.Sprintf("(parents = '%s') and (trashed = false)", dir.Id)
-			// 一つのアニメディレクトリは100個以下のはず
+			// 一つのアニメディレクトリは100個以下のはず = no pagination
 			c := srv.Files.List().Q(dirQuery).PageSize(100).Fields("nextPageToken, files(id, name, mimeType, size)")
 
 			r, err := c.Do()
@@ -71,7 +27,7 @@ func GetFileList(srv *drive.Service, files *[]*drive.File, parent string) error 
 
 			for _, f := range r.Files {
 				// 一つのアニメディレクトリにはもうディレクトリはないはず
-				*files = append(*files, f)
+				*resultFiles = append(*resultFiles, f)
 			}
 
 			<-limit
@@ -85,4 +41,19 @@ func GetFileList(srv *drive.Service, files *[]*drive.File, parent string) error 
 	}
 
 	return nil
+}
+
+func GetFileListById(srv *drive.Service, resultFiles *[]*drive.File, parent string) error {
+	dirs := GetAllDirList(srv, parent)
+
+	err := getFileList(srv, resultFiles, dirs)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetFileListByDirs(srv *drive.Service, resultFiles *[]*drive.File, dirs []*drive.File) error {
+	return getFileList(srv, resultFiles, dirs)
 }

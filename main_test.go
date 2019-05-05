@@ -5,12 +5,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/whywaita/google-drive-checker/files"
+	"google.golang.org/api/drive/v3"
 
 	"github.com/whywaita/google-drive-checker/api"
 	"github.com/whywaita/google-drive-checker/checker"
 	"github.com/whywaita/google-drive-checker/config"
-	"google.golang.org/api/drive/v3"
+	"github.com/whywaita/google-drive-checker/files"
 )
 
 var (
@@ -29,20 +29,21 @@ func before() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client := api.GetClient(c.CredJson)
+	con = c
+
+	client := api.GetClient(con.CredJson)
 
 	s, err := drive.New(client)
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
+	srv = s
 
 	err = files.GetFileListById(srv, fs, con.ParentId)
 	if err != nil {
 		log.Fatalf("Unable to get all file List: %v", err)
 	}
 
-	con = c
-	srv = s
 }
 
 func TestZeroByteFile(t *testing.T) {

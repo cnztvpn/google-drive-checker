@@ -4,21 +4,32 @@ import (
 	"fmt"
 
 	"golang.org/x/sync/errgroup"
-
 	"google.golang.org/api/drive/v3"
 )
 
+type Files struct {
+	// expand drive.File
+	drive.File
+
+	FullPath string
+}
+
 func getFileList(srv *drive.Service, resultFiles *[]*drive.File, dirs []*drive.File) error {
-	limit := make(chan struct{}, 3) // limit of parallel Google Drive API call
+	limit := make(chan struct{}, 1) // limit of parallel Google Drive API call
 
 	eg := errgroup.Group{}
 	for _, dir := range dirs {
+		d := dir
+
 		eg.Go(func() error {
 			limit <- struct{}{}
+			defer func() {
+				<-limit
+			}()
 
-			dirQuery := fmt.Sprintf("(parents = '%s') and (trashed = false)", dir.Id)
-			// 一つのアニメディレクトリは100個以下のはず = no pagination
-			c := srv.Files.List().Q(dirQuery).PageSize(100).Fields("nextPageToken, files(id, name, mimeType, size)")
+			dirQuery := fmt.Sprintf("(parents = '%s') and (trashed = false) and createdTime > '%s'", d.Id, CreatedTime)
+			// 一つのアニメディレクトリは20個以下のはず = no pagination
+			c := srv.Files.List().Q(dirQuery).PageSize(20).Fields("nextPageToken, files(id, name, mimeType, size)")
 
 			r, err := c.Do()
 			if err != nil {
@@ -29,8 +40,6 @@ func getFileList(srv *drive.Service, resultFiles *[]*drive.File, dirs []*drive.F
 				// 一つのアニメディレクトリにはもうディレクトリはないはず
 				*resultFiles = append(*resultFiles, f)
 			}
-
-			<-limit
 
 			return nil
 		})

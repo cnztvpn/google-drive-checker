@@ -14,11 +14,12 @@ type Files struct {
 	FullPath string
 }
 
-func getFileList(srv *drive.Service, resultFiles *[]*drive.File, dirs []*drive.File) error {
+func getFileList(srv *drive.Service, resultFiles *[]*Files, dirs []*Files) error {
 	limit := make(chan struct{}, 1) // limit of parallel Google Drive API call
 
 	eg := errgroup.Group{}
 	for _, dir := range dirs {
+		// pass goroutine miss ref: http://qiita.com/sudix/items/67d4cad08fe88dcb9a6d
 		d := dir
 
 		eg.Go(func() error {
@@ -38,7 +39,7 @@ func getFileList(srv *drive.Service, resultFiles *[]*drive.File, dirs []*drive.F
 
 			for _, f := range r.Files {
 				// 一つのアニメディレクトリにはもうディレクトリはないはず
-				*resultFiles = append(*resultFiles, f)
+				*resultFiles = append(*resultFiles, &Files{*f, d.FullPath + "/" + f.Name})
 			}
 
 			return nil
@@ -52,7 +53,7 @@ func getFileList(srv *drive.Service, resultFiles *[]*drive.File, dirs []*drive.F
 	return nil
 }
 
-func GetFileListById(srv *drive.Service, resultFiles *[]*drive.File, parent string) error {
+func GetFileListById(srv *drive.Service, resultFiles *[]*Files, parent string) error {
 	dirs := GetAllDirList(srv, parent)
 
 	err := getFileList(srv, resultFiles, dirs)
@@ -63,6 +64,6 @@ func GetFileListById(srv *drive.Service, resultFiles *[]*drive.File, parent stri
 	return nil
 }
 
-func GetFileListByDirs(srv *drive.Service, resultFiles *[]*drive.File, dirs []*drive.File) error {
+func GetFileListByDirs(srv *drive.Service, resultFiles *[]*Files, dirs []*Files) error {
 	return getFileList(srv, resultFiles, dirs)
 }

@@ -16,7 +16,7 @@ import (
 var (
 	con = &config.Config{}
 	srv = &drive.Service{}
-	fs  = &[]*drive.File{}
+	fs  = &[]*files.Files{}
 )
 
 func TestMain(m *testing.M) {
@@ -47,11 +47,15 @@ func before() {
 }
 
 func TestZeroByteFile(t *testing.T) {
+	code := 0
 	for _, f := range *fs {
 		err := checker.ZeroByteFile(f)
 		if err != nil {
 			// notify slack
 			log.Println(err)
+			code = 1
 		}
 	}
+
+	os.Exit(code)
 }

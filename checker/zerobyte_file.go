@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"google.golang.org/api/drive/v3"
+	"github.com/whywaita/google-drive-checker/files"
 )
 
-func ZeroByteFile(f *drive.File) error {
+func ZeroByteFile(f *files.Files) error {
 	if f.Size == 0 {
-		err := fmt.Sprintf("Zerobyte file detect: %s", f.Name)
+		err := fmt.Sprintf("Zerobyte file detect: %s", f.FullPath)
 		return errors.New(err)
 	}
 

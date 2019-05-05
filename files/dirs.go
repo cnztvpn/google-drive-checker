@@ -11,7 +11,7 @@ var (
 	CreatedTime = "2019-01-01T12:00:00"
 )
 
-func GetAllDirList(srv *drive.Service, parent string) (dirs []*drive.File) {
+func GetAllDirList(srv *drive.Service, parent string) (dirs []*Files) {
 	// get all directory in parent dir
 	n := GetDirList(srv, &dirs, parent, "")
 
@@ -23,7 +23,7 @@ func GetAllDirList(srv *drive.Service, parent string) (dirs []*drive.File) {
 	return dirs
 }
 
-func GetDirList(srv *drive.Service, dirs *[]*drive.File, parent, npt string) (nextPageToken string) {
+func GetDirList(srv *drive.Service, dirs *[]*Files, parent, npt string) (nextPageToken string) {
 	dirQuery := fmt.Sprintf("(parents = '%s') and (trashed = false) and createdTime > '%s'", parent, CreatedTime)
 
 	r, err := srv.Files.List().Q(dirQuery).Fields("nextPageToken, files(id, name, mimeType)").PageToken(npt).Do()
@@ -32,7 +32,7 @@ func GetDirList(srv *drive.Service, dirs *[]*drive.File, parent, npt string) (ne
 	}
 
 	for _, folder := range r.Files {
-		*dirs = append(*dirs, folder)
+		*dirs = append(*dirs, &Files{*folder, folder.Name})
 	}
 
 	if r.NextPageToken != "" {

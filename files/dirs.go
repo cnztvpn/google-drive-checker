@@ -2,7 +2,6 @@ package files
 
 import (
 	"fmt"
-	"log"
 
 	"google.golang.org/api/drive/v3"
 )
@@ -11,24 +10,30 @@ var (
 	CreatedTime = "2019-01-01T12:00:00"
 )
 
-func GetAllDirList(srv *drive.Service, parent string) (dirs []*Files) {
+func GetAllDirList(srv *drive.Service, parent string) (dirs []*Files, err error) {
 	// get all directory in parent dir
-	n := GetDirList(srv, &dirs, parent, "")
+	n, err := GetDirList(srv, &dirs, parent, "")
+	if err != nil {
+		return nil, err
+	}
 
 	for n != "" {
-		n = GetDirList(srv, &dirs, parent, n)
+		n, err = GetDirList(srv, &dirs, parent, n)
+		if err != nil {
+			return nil, err
+		}
 
 	}
 
-	return dirs
+	return dirs, err
 }
 
-func GetDirList(srv *drive.Service, dirs *[]*Files, parent, npt string) (nextPageToken string) {
+func GetDirList(srv *drive.Service, dirs *[]*Files, parent, npt string) (nextPageToken string, err error) {
 	dirQuery := fmt.Sprintf("(parents = '%s') and (trashed = false) and createdTime > '%s'", parent, CreatedTime)
 
 	r, err := srv.Files.List().Q(dirQuery).Fields("nextPageToken, files(id, name, mimeType)").PageToken(npt).Do()
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	for _, folder := range r.Files {
@@ -36,8 +41,8 @@ func GetDirList(srv *drive.Service, dirs *[]*Files, parent, npt string) (nextPag
 	}
 
 	if r.NextPageToken != "" {
-		return r.NextPageToken
+		return r.NextPageToken, nil
 	}
 
-	return ""
+	return "", nil
 }

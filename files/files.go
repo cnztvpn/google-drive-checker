@@ -54,9 +54,12 @@ func getFileList(srv *drive.Service, resultFiles *[]*Files, dirs []*Files) error
 }
 
 func GetFileListById(srv *drive.Service, resultFiles *[]*Files, parent string) error {
-	dirs := GetAllDirList(srv, parent)
+	dirs, err := GetAllDirList(srv, parent)
+	if err != nil {
+		return err
+	}
 
-	err := getFileList(srv, resultFiles, dirs)
+	err = getFileList(srv, resultFiles, dirs)
 	if err != nil {
 		return err
 	}

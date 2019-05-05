@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	con = &config.Config{}
-	srv = &drive.Service{}
-	fs  = &[]*files.Files{}
+	con  = &config.Config{}
+	srv  = &drive.Service{}
+	dirs = &[]*files.Files{}
 )
 
 func TestMain(m *testing.M) {
@@ -39,23 +39,30 @@ func before() {
 	}
 	srv = s
 
-	err = files.GetFileListById(srv, fs, con.ParentId)
+	ds, err := files.GetAllDirList(srv, con.ParentId)
 	if err != nil {
-		log.Fatalf("Unable to get all file List: %v", err)
+		log.Fatalf("Unable to get all directory List: %v", err)
 	}
-
+	dirs = &ds
 }
 
-func TestZeroByteFile(t *testing.T) {
-	code := 0
-	for _, f := range *fs {
-		err := checker.ZeroByteFile(f)
-		if err != nil {
-			// notify slack
-			log.Println(err)
-			code = 1
-		}
-	}
+//func TestZeroByteFile(t *testing.T) {
+//	code := 0
+//	for _, f := range *fs {
+//		err := checker.ZeroByteFile(f)
+//		if err != nil {
+//			// notify slack
+//			log.Println(err)
+//			code = 1
+//		}
+//	}
+//
+//	os.Exit(code)
+//}
 
-	os.Exit(code)
+func TestDuplicateDirName(t *testing.T) {
+	err := checker.DuplicateDirName(*dirs)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

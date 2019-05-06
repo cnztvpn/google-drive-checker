@@ -5,6 +5,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/johntdyer/slackrus"
+	"github.com/sirupsen/logrus"
+
 	"google.golang.org/api/drive/v3"
 
 	"github.com/whywaita/google-drive-checker/api"
@@ -44,12 +47,23 @@ func before() {
 		log.Fatalf("Unable to get all directory List: %v", err)
 	}
 	dirs = &ds
+
+	logrus.AddHook(&slackrus.SlackrusHook{
+		HookURL:        con.SlackHookURL,
+		AcceptedLevels: slackrus.LevelThreshold(logrus.InfoLevel),
+		Channel:        con.SlackChannelName,
+		IconEmoji:      ":ghost:",
+		Username:       "Google Drive Checker",
+	})
 }
 
 func TestDuplicateDirName(t *testing.T) {
-	err := checker.DuplicateDirName(*dirs)
-	if err != nil {
-		t.Fatal(err)
+	detected := checker.DuplicateDirName(*dirs)
+	if detected != nil {
+		for folderName, ids := range detected {
+			logrus.Infof("%v: %v\n", folderName, ids)
+		}
+		t.Fatal("detected duplicate directory name!")
 	}
 }
 
@@ -66,13 +80,13 @@ func TestZeroByteFile(t *testing.T) {
 		err := checker.ZeroByteFile(f)
 		if err != nil {
 			// notify slack
-			log.Println(err)
+			logrus.Warn(err)
 			code = 1
 		}
 	}
 
 	if code == 1 {
-		t.Fatal("ZeroByte File detected")
+		t.Fatal("detected size of file is zero!")
 	}
 
 }

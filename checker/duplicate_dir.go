@@ -1,13 +1,10 @@
 package checker
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/whywaita/google-drive-checker/files"
 )
 
-func DuplicateDirName(fs []*files.Files) error {
+func DuplicateDirName(fs []*files.Files) map[string][]string {
 	// check same name and diff id (= is invalid)
 	nameToId := map[string]string{}
 	detected := map[string][]string{}
@@ -24,12 +21,7 @@ func DuplicateDirName(fs []*files.Files) error {
 	}
 
 	if len(detected) != 0 {
-		fmt.Println("detected!")
-		for folderName, ids := range detected {
-			fmt.Printf("%v: %v\n", folderName, ids)
-		}
-
-		return errors.New("detected")
+		return detected
 	}
 
 	return nil

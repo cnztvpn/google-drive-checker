@@ -46,23 +46,33 @@ func before() {
 	dirs = &ds
 }
 
-//func TestZeroByteFile(t *testing.T) {
-//	code := 0
-//	for _, f := range *fs {
-//		err := checker.ZeroByteFile(f)
-//		if err != nil {
-//			// notify slack
-//			log.Println(err)
-//			code = 1
-//		}
-//	}
-//
-//	os.Exit(code)
-//}
-
 func TestDuplicateDirName(t *testing.T) {
 	err := checker.DuplicateDirName(*dirs)
 	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestZeroByteFile(t *testing.T) {
+	code := 0
+	var fs []*files.Files
+
+	err := files.GetFileListByDirs(srv, &fs, *dirs)
+	if err != nil {
 		log.Fatal(err)
 	}
+
+	for _, f := range fs {
+		err := checker.ZeroByteFile(f)
+		if err != nil {
+			// notify slack
+			log.Println(err)
+			code = 1
+		}
+	}
+
+	if code == 1 {
+		t.Fatal("ZeroByte File detected")
+	}
+
 }

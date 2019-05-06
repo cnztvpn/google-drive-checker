@@ -7,12 +7,14 @@ checker of files in google drive for myself
 ```
 $ export GD_CHECKER_CRED_JSON='{"installed"~~~~}'  # Google API OAuth2 Credential JSON
 $ export GD_CHECKER_PARENT_ID='' # Google Drive Directory ID
+$ export GD_CHECKER_SLACK_HOOK_URL='' # slack incoming-webhook url
+$ export GD_CHECKER_SLACK_CHANNEL_NAME='' # slack notification channel
+$ export GD_CHECKER_GOOGLE_DRIVE_TOKEN='' # Google Drive Refresh Token
 
 $ go test main_test.go
 ```
 
 ## How to get Google Drive Refresh token
-
 
 - Auth Code: can get from browser, short expiry
 - Refresh Token: can get from API using Auth Code, never expire until to revoke
@@ -22,7 +24,7 @@ you need to prepare
 - Client Secret from service account credential JSON
 
 
-### get Auth Code (Open your browser)
+### get Auth Code (Open in your browser)
 need to overwrite your project id
 
 ```
@@ -48,7 +50,6 @@ response example:
   "scope": "https://www.googleapis.com/auth/drive",
   "token_type": "Bearer"
 }
-
 ```
 
--> Right!
+-> Good!

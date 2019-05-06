@@ -34,7 +34,7 @@ func before() {
 	}
 	con = c
 
-	client := api.GetClient(con.CredJson)
+	client := api.GetClient(*con)
 
 	s, err := drive.New(client)
 	if err != nil {

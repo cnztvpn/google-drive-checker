@@ -11,6 +11,7 @@ type Config struct {
 	CredJson         string
 	SlackHookURL     string
 	SlackChannelName string
+	GoogleDriveToken string
 }
 
 func Initiallize() (*Config, error) {
@@ -19,6 +20,7 @@ func Initiallize() (*Config, error) {
 	cjEnv := "GD_CHECKER_CRED_JSON"
 	shuEnv := "GD_CHECKER_SLACK_HOOK_URL"
 	shcnEnv := "GD_CHECKER_SLACK_CHANNEL_NAME"
+	gdtEnv := "GD_CHECKER_GOOGLE_DRIVE_TOKEN"
 
 	if os.Getenv(piEnv) == "" {
 		return nil, errors.New(fmt.Sprintf("%s must be set", piEnv))
@@ -42,6 +44,12 @@ func Initiallize() (*Config, error) {
 		return nil, errors.New(fmt.Sprintf("%s must be set", shcnEnv))
 	} else {
 		c.SlackChannelName = os.Getenv(shcnEnv)
+	}
+
+	if os.Getenv(gdtEnv) == "" {
+		return nil, errors.New(fmt.Sprintf("%s must be set", gdtEnv))
+	} else {
+		c.GoogleDriveToken = os.Getenv(gdtEnv)
 	}
 
 	return &c, nil

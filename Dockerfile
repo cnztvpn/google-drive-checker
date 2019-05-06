@@ -1,10 +1,7 @@
-FROM golang:latest as builder
+FROM golang:latest
 
 MAINTAINER "whywaita <https://github.com/whywaita>"
 
-ENV CGO_ENABLED=0
-ENV GOOS=linux
-ENV GOARCH=amd64
 WORKDIR /go/src/github.com/whywaita/google-drive-checker
 
 COPY go.mod go.mod

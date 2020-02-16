@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/johntdyer/slackrus"
@@ -76,14 +77,30 @@ func TestZeroByteFile(t *testing.T) {
 		log.Fatal(err)
 	}
 
+	var wg sync.WaitGroup
 	for _, f := range fs {
-		err := checker.ZeroByteFile(f)
-		if err != nil {
-			// notify slack
-			logrus.Warn(err)
-			code = 1
-		}
+		go func() {
+			wg.Add(1)
+			defer wg.Done()
+			file := f
+			err := checker.ZeroByteFile(file)
+			if err != nil {
+				// notify slack
+				logrus.Warn(err)
+
+				// delete file
+				err = files.Delete(srv, file)
+				if err != nil {
+					logrus.Errorf("failed to delete file: %s Error: %v", file.Name, err)
+				} else {
+					logrus.Infof("Deleted file: %s", file.Name)
+				}
+				code = 1
+			}
+		}()
 	}
+
+	wg.Wait()
 
 	if code == 1 {
 		t.Fatal("detected size of file is zero!")
